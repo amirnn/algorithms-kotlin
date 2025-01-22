@@ -26,7 +26,7 @@ class DynamicArray<T> : IList<T> {
     private val itemShrinkRatio = 4
 
 
-    // ------------------------------------------- Getters
+    // ------------------------------------------- Getters ------------------------------------------- //
 
     /**
      * Returns number of elements currently inside the buffer
@@ -52,9 +52,7 @@ class DynamicArray<T> : IList<T> {
      * @throws IndexOutOfBoundsException .
      */
     override operator fun get(index: Int): T {
-        if (index >= getNumberOfItems()) {
-            throw IndexOutOfBoundsException("Index $index is out of bounds")
-        }
+        checkBounds(index)
         return data[getCorrectIndex(index)] as T
     }
 
@@ -62,14 +60,61 @@ class DynamicArray<T> : IList<T> {
 
     override fun getTail(): T = get(size() - 1)
 
-    override operator fun set(index: Int, value: T) {
-        if (index >= getNumberOfItems()) {
-            throw IndexOutOfBoundsException("Index $index out of bounds")
+    override fun pushAt(index: Int, item: T) {
+        checkBounds(index)
+        if (isBufferFull())
+        {
+            extendBufferAndCopyData()
         }
+        val injectionIndex = getCorrectIndex(index)
+        for (i in injectionIndex until getNumberOfItems() - 1) {
+            if (injectionIndex ==)
+        }
+
+    }
+
+    override operator fun set(index: Int, value: T) {
+        checkBounds(index)
         data[getCorrectIndex(index)] = value
     }
 
-    // ------------------------------------------- Setters
+    /**
+     * Get number of items inside the array
+     */
+    private fun getNumberOfItems(): Int {
+        return if (isEmpty()) {
+            0
+        } else {
+            (tail - head + 1)
+        }
+    }
+
+    private fun getTailIndexInBuffer(): Int = getCorrectIndex(tail)
+
+    private fun getHeadIndexInBuffer(): Int = getCorrectIndex(0)
+
+    /**
+     * maps an index from [head, tail] to [0, #items]
+     */
+    private fun getCorrectIndex(index: Int): Int {
+        checkBounds(index)
+        return (index + head + bufferSize) % bufferSize
+    }
+
+    private fun checkBounds(index: Int) {
+        if (index >= getNumberOfItems()) {
+            throw IndexOutOfBoundsException("Index $index is out of bounds")
+        }
+    }
+
+    private fun isBufferFull(): Boolean = getNumberOfItems() >= bufferSize // this is ((tail - head) + 1) % size
+    private fun isBufferCloseToGetFull(): Boolean =
+        getNumberOfItems() == bufferSize - 1 // this is ((tail - head) + 1) % size
+
+    private fun bufferNeedsShrinking(): Boolean = getNumberOfItems() <= (bufferSize / itemShrinkRatio)
+    private fun isBufferCloseToNeedShrinking(): Boolean = getNumberOfItems() <= (bufferSize / itemShrinkRatio) + 1
+
+    // ------------------------------------------- Setters ------------------------------------------- //
 
     override fun pushFront(item: T) {
         if (isBufferFull()) extendBufferAndCopyData()
@@ -96,6 +141,7 @@ class DynamicArray<T> : IList<T> {
     }
 
     override fun popFront(): T {
+        if (isEmpty()) throw NoSuchElementException()
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
         val headIndex = getHeadIndexInBuffer()
         val item = data[headIndex]
@@ -105,6 +151,7 @@ class DynamicArray<T> : IList<T> {
     }
 
     override fun popBack(): T {
+        if (isEmpty()) throw NoSuchElementException()
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
         val tailIndex = getTailIndexInBuffer()
         val item = data[tailIndex]
@@ -113,15 +160,10 @@ class DynamicArray<T> : IList<T> {
         return item as T
     }
 
-    /**
-     * Get number of items inside the array
-     */
-    private fun getNumberOfItems(): Int {
-        return if (isEmpty()) {
-            0
-        } else {
-            (tail - head + 1)
-        }
+    override fun popAt(index: Int): T {
+        checkBounds(index)
+        if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
+        TODO("Not yet implemented")
     }
 
     /**
@@ -162,20 +204,6 @@ class DynamicArray<T> : IList<T> {
         // update the size
         bufferSize /= bufferShrinkScale
     }
-
-    private fun getTailIndexInBuffer(): Int = getCorrectIndex(tail)
-
-    private fun getHeadIndexInBuffer(): Int = getCorrectIndex(0)
-
-    /**
-     * maps an index from [head, tail] to [0, sizeOfBuffer]
-     */
-    private fun getCorrectIndex(index: Int): Int = (index + head + bufferSize) % bufferSize
-
-    private fun isBufferFull(): Boolean = getNumberOfItems() >= bufferSize // this is ((tail - head) + 1) % size
-
-    private fun bufferNeedsShrinking(): Boolean = getNumberOfItems() <= (bufferSize / itemShrinkRatio)
-
 
     override fun iterator(): Iterator<T> {
         return object : Iterator<T> {
