@@ -65,8 +65,7 @@ class DynamicArray<T> : Iterable<T> {
     }
 
     // ------------------------------------------- Setters
-
-    // TODO: There is a bug in this implementation, the indices are not calculated correctly
+    
     fun pushFront(item: T) {
         if (isBufferFull()) extendBufferAndCopyData()
         if (isEmpty()) {
@@ -74,8 +73,6 @@ class DynamicArray<T> : Iterable<T> {
             return
         }
         // decrease head
-        val headIndex = getHeadIndexInBuffer()
-
         --head
         val headIndex = getHeadIndexInBuffer()
         data[headIndex] = item
@@ -95,16 +92,18 @@ class DynamicArray<T> : Iterable<T> {
 
     fun popFront(): T {
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
-        val item = data[head]
-        data[head] = null
+        val headIndex = getHeadIndexInBuffer()
+        val item = data[headIndex]
+        data[headIndex] = null
         if (!isEmpty()) ++head
         return item as T
     }
 
     fun popBack(): T {
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
-        val item = data[tail]
-        data[tail] = null
+        val tailIndex = getTailIndexInBuffer()
+        val item = data[tailIndex]
+        data[tailIndex] = null
         if (!isEmpty()) --tail
         return item as T
     }
@@ -161,7 +160,7 @@ class DynamicArray<T> : Iterable<T> {
 
     private fun getTailIndexInBuffer(): Int = getCorrectIndex(tail)
 
-    private fun getHeadIndexInBuffer(): Int = getCorrectIndex(head)
+    private fun getHeadIndexInBuffer(): Int = getCorrectIndex(0)
 
     /**
      * maps an index from [head, tail] to [0, sizeOfBuffer]
