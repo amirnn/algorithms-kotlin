@@ -38,9 +38,11 @@ class DynamicArray<T> : Iterable<T> {
     fun bufferSize() = bufferSize
 
     fun isEmpty(): Boolean {
-        val headIsEmpty = data[head] == null
-        val tailIsEmpty = data[tail] == null
-        val headAndTailAreSame = head == tail
+        val headIndex = getHeadIndexInBuffer()
+        val tailIndex = getTailIndexInBuffer()
+        val headIsEmpty = data[headIndex] == null
+        val tailIsEmpty = data[tailIndex] == null
+        val headAndTailAreSame = headIndex == tailIndex
         return headAndTailAreSame && tailIsEmpty && headIsEmpty
     }
 
@@ -63,6 +65,8 @@ class DynamicArray<T> : Iterable<T> {
     }
 
     // ------------------------------------------- Setters
+
+    // TODO: There is a bug in this implementation, the indices are not calculated correctly
     fun pushFront(item: T) {
         if (isBufferFull()) extendBufferAndCopyData()
         if (isEmpty()) {
@@ -70,6 +74,8 @@ class DynamicArray<T> : Iterable<T> {
             return
         }
         // decrease head
+        val headIndex = getHeadIndexInBuffer()
+
         --head
         val headIndex = getHeadIndexInBuffer()
         data[headIndex] = item
@@ -106,7 +112,13 @@ class DynamicArray<T> : Iterable<T> {
     /**
      * Get number of items inside the array
      */
-    private fun getNumberOfItems(): Int = (tail - head + 1)
+    private fun getNumberOfItems(): Int {
+        return if (isEmpty()) {
+            0
+        } else {
+            (tail - head + 1)
+        }
+    }
 
     /**
      * will extend the buffer to its @param bufferExtensionsScale size and will reset head and tail
@@ -151,6 +163,9 @@ class DynamicArray<T> : Iterable<T> {
 
     private fun getHeadIndexInBuffer(): Int = getCorrectIndex(head)
 
+    /**
+     * maps an index from [head, tail] to [0, sizeOfBuffer]
+     */
     private fun getCorrectIndex(index: Int): Int = (index + head + bufferSize) % bufferSize
 
     private fun isBufferFull(): Boolean = getNumberOfItems() >= bufferSize // this is ((tail - head) + 1) % size
