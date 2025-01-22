@@ -2,6 +2,7 @@
 
 package datastructures
 
+import datastructures.IList
 
 /**
  * Dynamic Array that is implemented using a circular buffer.
@@ -12,7 +13,7 @@ package datastructures
  * da.popFront() = theta(1), asymptotic
  * da.popBack() = theta(1), asymptotic
  */
-class DynamicArray<T> : Iterable<T> {
+class DynamicArray<T> : IList<T> {
     private val initialBufferSize = 2
     private var data = Array<Any?>(initialBufferSize) { null }
     private var bufferSize: Int = initialBufferSize // size of buffer
@@ -30,14 +31,14 @@ class DynamicArray<T> : Iterable<T> {
     /**
      * Returns number of elements currently inside the buffer
      */
-    fun size() = getNumberOfItems()
+    override fun size() = getNumberOfItems()
 
     /**
      * Get buffer size
      */
     fun bufferSize() = bufferSize
 
-    fun isEmpty(): Boolean {
+    override fun isEmpty(): Boolean {
         val headIndex = getHeadIndexInBuffer()
         val tailIndex = getTailIndexInBuffer()
         val headIsEmpty = data[headIndex] == null
@@ -50,14 +51,18 @@ class DynamicArray<T> : Iterable<T> {
      * Get item at @param index. In case index is greater or equal to #elements inside the container, it
      * @throws IndexOutOfBoundsException .
      */
-    operator fun get(index: Int): T {
+    override operator fun get(index: Int): T {
         if (index >= getNumberOfItems()) {
             throw IndexOutOfBoundsException("Index $index is out of bounds")
         }
         return data[getCorrectIndex(index)] as T
     }
 
-    operator fun set(index: Int, value: T) {
+    override fun getHead(): T = get(0)
+
+    override fun getTail(): T = get(size() - 1)
+
+    override operator fun set(index: Int, value: T) {
         if (index >= getNumberOfItems()) {
             throw IndexOutOfBoundsException("Index $index out of bounds")
         }
@@ -65,8 +70,8 @@ class DynamicArray<T> : Iterable<T> {
     }
 
     // ------------------------------------------- Setters
-    
-    fun pushFront(item: T) {
+
+    override fun pushFront(item: T) {
         if (isBufferFull()) extendBufferAndCopyData()
         if (isEmpty()) {
             data[head] = item
@@ -78,7 +83,7 @@ class DynamicArray<T> : Iterable<T> {
         data[headIndex] = item
     }
 
-    fun pushBack(item: T) {
+    override fun pushBack(item: T) {
         if (isBufferFull()) extendBufferAndCopyData()
         if (isEmpty()) {
             data[tail] = item
@@ -90,7 +95,7 @@ class DynamicArray<T> : Iterable<T> {
         data[tailIndex] = item
     }
 
-    fun popFront(): T {
+    override fun popFront(): T {
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
         val headIndex = getHeadIndexInBuffer()
         val item = data[headIndex]
@@ -99,7 +104,7 @@ class DynamicArray<T> : Iterable<T> {
         return item as T
     }
 
-    fun popBack(): T {
+    override fun popBack(): T {
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
         val tailIndex = getTailIndexInBuffer()
         val item = data[tailIndex]

@@ -1,6 +1,6 @@
 package datastructures
 
-class DoublyLinkedList<T> : Iterable<DoublyLinkedList.Node<T>> {
+class DoublyLinkedList<T> : IList<T> {
 
     data class Node<T>(var value: T, var next: Node<T>? = null, var previous: Node<T>? = null)
 
@@ -8,18 +8,16 @@ class DoublyLinkedList<T> : Iterable<DoublyLinkedList.Node<T>> {
     private var tail: Node<T>? = null
     private var size = 0
 
-    fun getSize() = size
-
     /**
      * Pushes a new node to the head
      */
-    fun pushFront(value: T) {
+    override fun pushFront(item: T) {
         if (size == 0) {
-            head = Node(value)
+            head = Node(item)
             tail = head
 
         } else {
-            val newNode = Node(value, head)
+            val newNode = Node(item, head)
             head?.previous = newNode
             head = newNode
         }
@@ -30,12 +28,12 @@ class DoublyLinkedList<T> : Iterable<DoublyLinkedList.Node<T>> {
     /**
      * Pushes a new node to the tail
      */
-    fun pushBack(value: T) {
+    override fun pushBack(item: T) {
         if (size == 0) {
-            tail = Node(value)
+            tail = Node(item)
             head = tail
         } else {
-            val newNode = Node(value, null, tail)
+            val newNode = Node(item, null, tail)
             tail?.next = newNode
             tail = newNode
         }
@@ -43,10 +41,50 @@ class DoublyLinkedList<T> : Iterable<DoublyLinkedList.Node<T>> {
         size++
     }
 
+    override fun size(): Int  = size
+
+    override fun isEmpty(): Boolean = (size == 0)
+
+    override fun get(index: Int): T  = getNthItem(index)
+
+    // this method can be improved to have thetha(lg(n)) rather than linear
+    private fun getNthItem(index: Int): T {
+        if (isEmpty()) throw NoSuchElementException()
+        var node = head
+        for ( i in 1 until index) {
+            node = node!!.next
+        }
+        return node!!.value
+    }
+
+    private fun getNthNode(index: Int): Node<T> {
+        if (isEmpty()) throw NoSuchElementException()
+        var node = head
+        for ( i in 1 until index) {
+            node = node!!.next
+        }
+        return node!!
+    }
+
+
+    override fun getHead(): T {
+        if (isEmpty()) {
+            throw NoSuchElementException()
+        }
+        return head!!.value
+    }
+
+    override fun getTail(): T {
+        if (isEmpty()) {
+            throw NoSuchElementException()
+        }
+        return tail!!.value
+    }
+
     /**
      * Returns the element at the head
      */
-    fun popFront(): Node<T>? {
+    override fun popFront(): T {
         val item: Node<T>?
         when (size) {
             0 -> item = null
@@ -63,10 +101,10 @@ class DoublyLinkedList<T> : Iterable<DoublyLinkedList.Node<T>> {
         }
         // update size
         size--
-        return item
+        return item!!.value
     }
 
-    fun popBack(): Node<T>? {
+    override fun popBack(): T {
         val item: Node<T>?
         when (size) {
             0 -> item = null
@@ -83,22 +121,27 @@ class DoublyLinkedList<T> : Iterable<DoublyLinkedList.Node<T>> {
         }
         // update size
         size--
-        return item
+        return item!!.value
     }
 
-    override fun iterator(): Iterator<Node<T>> {
-        return object : Iterator<Node<T>> {
+    override fun set(index: Int, value: T) {
+        val node = getNthNode(index)
+        node.value = value
+    }
+
+    override fun iterator(): Iterator<T> {
+        return object : Iterator<T> {
             var current: Node<T>? = head
             override fun hasNext(): Boolean {
                 return current != null
             }
 
-            override fun next(): Node<T> {
+            override fun next(): T {
                 if (current == null || current?.next == null) {
                     throw NoSuchElementException()
                 }
                 current = current?.next
-                return current!!
+                return current!!.value
             }
         }
     }

@@ -6,14 +6,14 @@ import datastructures.DynamicArray
 fun main() {
     val dlist = DoublyLinkedList<Int>()
     dlist.pushFront(5)
-    assert(dlist.getSize() == 1)
+    assert(dlist.size() == 1)
     dlist.pushBack(2)
-    assert(dlist.getSize() == 2)
+    assert(dlist.size() == 2)
     dlist.pushFront(3)
 
     // Test dynamic list
-    for (i in dlist.getSize() downTo 1) {
-        println(dlist.popFront()!!.value)
+    for (i in dlist.size() downTo 1) {
+        println(dlist.popFront())
     }
 
     // Test dynamic array
