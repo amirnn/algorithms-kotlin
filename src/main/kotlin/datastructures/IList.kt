@@ -11,8 +11,14 @@ interface IList<T>: Iterable<T> {
     // setters
     fun pushFront(item: T)
     fun pushBack(item: T)
+
+    fun pushAt(index: Int, item: T)
+
     fun popFront(): T
     fun popBack(): T
+
+    fun popAt(index: Int): T
+
     operator fun set(index: Int, value: T)
 
 }

@@ -1,5 +1,17 @@
 package datastructures
 
+
+/**
+ * A Doubly Linked List.
+ * Complexity:
+ * pushFront() = theta(1)
+ * pushBack() = theta(1)
+ * popFront() = theta(1)
+ * popBack() = theta(1)
+ * doublyLinkedList[n] = theta(n) (get operator)
+ *
+ * Note that I can improve the get operator to tetha lg(n)
+ */
 class DoublyLinkedList<T> : IList<T> {
 
     data class Node<T>(var value: T, var next: Node<T>? = null, var previous: Node<T>? = null)
@@ -22,7 +34,7 @@ class DoublyLinkedList<T> : IList<T> {
             head = newNode
         }
         // update size
-        size++
+        ++size
     }
 
     /**
@@ -38,32 +50,37 @@ class DoublyLinkedList<T> : IList<T> {
             tail = newNode
         }
         // update size
-        size++
+        ++size
     }
 
-    override fun size(): Int  = size
+    override fun size(): Int = size
 
     override fun isEmpty(): Boolean = (size == 0)
 
-    override fun get(index: Int): T  = getNthItem(index)
+    override fun get(index: Int): T = getNthItem(index)
 
     // this method can be improved to have thetha(lg(n)) rather than linear
     private fun getNthItem(index: Int): T {
-        if (isEmpty()) throw NoSuchElementException()
+        checkSizeAndBounds(index)
         var node = head
-        for ( i in 1 until index) {
+        for (i in 1 until index) {
             node = node!!.next
         }
         return node!!.value
     }
 
     private fun getNthNode(index: Int): Node<T> {
-        if (isEmpty()) throw NoSuchElementException()
+        checkSizeAndBounds(index)
         var node = head
-        for ( i in 1 until index) {
+        for (i in 1 until index) {
             node = node!!.next
         }
         return node!!
+    }
+
+    private fun checkSizeAndBounds(index: Int) {
+        if (isEmpty()) throw NoSuchElementException()
+        if (index > size - 1) throw IndexOutOfBoundsException()
     }
 
 
@@ -79,6 +96,30 @@ class DoublyLinkedList<T> : IList<T> {
             throw NoSuchElementException()
         }
         return tail!!.value
+    }
+
+    override fun pushAt(index: Int, item: T) {
+        checkSizeAndBounds(index)
+        when (index) {
+            0 -> {
+                pushFront(item)
+            }
+
+            size - 1 -> {
+                pushBack(item)
+            }
+
+            else -> {
+                val newNode = Node(item)
+                val oldNthNode = getNthNode(index)
+                oldNthNode.previous?.next = newNode // re-point the n-1th node to the new node
+                newNode.previous = oldNthNode.previous // point to n-1th node from the new node
+                oldNthNode.previous = newNode // re-point the old nth node to the new node
+                newNode.next = oldNthNode
+            }
+        }
+        // update size
+        ++size
     }
 
     /**
@@ -97,10 +138,12 @@ class DoublyLinkedList<T> : IList<T> {
             else -> {
                 item = head
                 head = head?.next
+                head?.previous = null // the new head should point to null
+                item?.next = null // point to null, not necessary but to be correct
             }
         }
         // update size
-        size--
+        --size
         return item!!.value
     }
 
@@ -117,11 +160,33 @@ class DoublyLinkedList<T> : IList<T> {
             else -> {
                 item = tail
                 tail = tail?.previous
+                tail?.next = null // the new tail should point to null
+                item?.previous = null // point to null, not necessary but to be correct
             }
         }
         // update size
-        size--
+        --size
         return item!!.value
+    }
+
+    override fun popAt(index: Int): T {
+        checkSizeAndBounds(index)
+        val item: T
+        when (index) {
+            0 -> item = popFront()
+            size - 1 -> item = popBack()
+            else -> {
+                val nthNode = getNthNode(index)
+                nthNode.previous?.next = nthNode.next
+                nthNode.next?.previous = nthNode.previous
+                nthNode.previous = null
+                nthNode.next = null
+                item = nthNode.value
+            }
+        }
+        // update size
+        --size
+        return item
     }
 
     override fun set(index: Int, value: T) {
