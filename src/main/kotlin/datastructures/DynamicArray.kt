@@ -2,8 +2,6 @@
 
 package datastructures
 
-import datastructures.IList
-
 /**
  * Dynamic Array that is implemented using a circular buffer.
  * Complexity:
@@ -53,7 +51,7 @@ class DynamicArray<T> : IList<T> {
      */
     override operator fun get(index: Int): T {
         checkBounds(index)
-        return data[getCorrectIndex(index)] as T
+        return data[getActualIndex(index)] as T
     }
 
     override fun getHead(): T = get(0)
@@ -62,20 +60,27 @@ class DynamicArray<T> : IList<T> {
 
     override fun pushAt(index: Int, item: T) {
         checkBounds(index)
-        if (isBufferFull())
-        {
+        if (isBufferFull()) {
             extendBufferAndCopyData()
         }
-        val injectionIndex = getCorrectIndex(index)
-        for (i in injectionIndex until getNumberOfItems() - 1) {
-            if (injectionIndex ==)
+        // where to put data in the array
+        val injectionActualIndex = getActualIndex(index)
+        // index in [head, tail] index space
+        val transformedIndex = index + head
+        if (index < size() / 2) {
+            // closer to head
+            shiftItemsToLeft(transformedIndex)
+        } else {
+            // closer to tail
+            shiftItemsToRight(transformedIndex)
         }
-
+        assert(data[injectionActualIndex] == null)
+        data[injectionActualIndex] = item
     }
 
     override operator fun set(index: Int, value: T) {
         checkBounds(index)
-        data[getCorrectIndex(index)] = value
+        data[getActualIndex(index)] = value
     }
 
     /**
@@ -89,14 +94,16 @@ class DynamicArray<T> : IList<T> {
         }
     }
 
-    private fun getTailIndexInBuffer(): Int = getCorrectIndex(tail)
+    private fun getTailIndexInBuffer(): Int = getActualIndex(tail)
 
-    private fun getHeadIndexInBuffer(): Int = getCorrectIndex(0)
+    private fun getHeadIndexInBuffer(): Int = getActualIndex(0)
 
     /**
      * maps an index from [head, tail] to [0, #items]
+     * note that head goes to negatives and tail goes to positives
+     * @return actual value index, can be used in data[index]
      */
-    private fun getCorrectIndex(index: Int): Int {
+    private fun getActualIndex(index: Int): Int {
         checkBounds(index)
         return (index + head + bufferSize) % bufferSize
     }
@@ -163,7 +170,16 @@ class DynamicArray<T> : IList<T> {
     override fun popAt(index: Int): T {
         checkBounds(index)
         if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
-        TODO("Not yet implemented")
+        val item = data[getActualIndex(index)] as T
+        val transformedIndex = index + head
+        if (index < size() / 2) {
+            // closer to head
+            shiftItemsToRight(startFrom = head, stopAt = transformedIndex)
+        } else {
+            // closer to tail
+            shiftItemsToLeft(startFrom = tail, stopAt = transformedIndex)
+        }
+        return item
     }
 
     /**
@@ -173,7 +189,7 @@ class DynamicArray<T> : IList<T> {
         val numberOfItems = getNumberOfItems()
         val newData: Array<Any?> = Array(bufferExtensionsScale * bufferSize) { null }
         for (i in 0..<numberOfItems) {
-            newData[i] = data[getCorrectIndex(i)]
+            newData[i] = data[getActualIndex(i)]
         }
         // update the data
         data = newData
@@ -194,7 +210,7 @@ class DynamicArray<T> : IList<T> {
         assert(numberOfItems <= shrinkSize / itemShrinkRatio)
         val newData: Array<Any?> = Array(shrinkSize) { null }
         for (i in 0..<numberOfItems) {
-            newData[i] = data[getCorrectIndex(i)]
+            newData[i] = data[getActualIndex(i)]
         }
         // update data
         data = newData
@@ -203,6 +219,75 @@ class DynamicArray<T> : IList<T> {
         tail = numberOfItems - 1
         // update the size
         bufferSize /= bufferShrinkScale
+    }
+
+    /**
+     * reserves a buffer of size for the array
+     * this method only can extend, not shrink
+     * @param reserveSize
+     */
+    fun reserve(reserveSize: Int) {
+        if (reserveSize < 2) throw UnsupportedOperationException("Size of $reserveSize is negative")
+        if (reserveSize <= this.size()) throw UnsupportedOperationException("Buffer size must be greater than the current size")
+        val powerOfTwo = findClosestPowerOfTwoGreaterOrEqualTo(reserveSize)
+        val newData: Array<Any?> = Array(powerOfTwo) { null }
+        val numberOfItems = getNumberOfItems()
+        for (i in 0..<numberOfItems) {
+            newData[i] = data[getActualIndex(i)]
+        }
+        data = newData
+        head = 0
+        tail = numberOfItems - 1
+        bufferSize = powerOfTwo
+    }
+
+    /**
+     * Complexity Lg(n)
+     */
+    private fun findClosestPowerOfTwoGreaterOrEqualTo(number: Int): Int {
+        var factor = 1
+        do {
+            factor *= 2
+        } while (factor <= number)
+        return factor
+    }
+
+    /**
+     * Shifts items one position towards stopAt and starting form:
+     * @param startFrom is in [head, tail] index space
+     * @param stopAt is in [head, tail] index space
+     * Note that startFrom must be <= stopAt
+     */
+    private fun shiftItemsToRight(startFrom: Int, stopAt: Int = tail) {
+        checkBounds(startFrom)
+        val actualStartingIndex = getActualIndex(startFrom)
+        var shiftingItem = data[actualStartingIndex] as T
+        for (i in startFrom + 1..stopAt) {
+            val actualIndex = getActualIndex(i)
+            val temp = data[actualIndex] as T
+            data[actualIndex] = shiftingItem
+            shiftingItem = temp
+        }
+        data[actualStartingIndex] = null
+    }
+
+    /**
+     * Shift items one position towards stopAt, starting at startFrom and stopping at stopAt
+     * @param startFrom Note that startFrom will also be shifted one position to the left,
+     * and it is in [head, tail]
+     * Note that startFrom must be >= stopAt
+     */
+    private fun shiftItemsToLeft(startFrom: Int, stopAt: Int = head) {
+        checkBounds(startFrom)
+        val actualStartingIndex = getActualIndex(startFrom)
+        var shiftingItem = data[actualStartingIndex] as T
+        for (i in startFrom - 1 downTo stopAt) {
+            val actualIndex = getActualIndex(i)
+            val temp = data[actualIndex] as T
+            data[actualIndex] = shiftingItem
+            shiftingItem = temp
+        }
+        data[actualStartingIndex] = null
     }
 
     override fun iterator(): Iterator<T> {
