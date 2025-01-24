@@ -70,9 +70,13 @@ class DynamicArray<T> : IList<T> {
         if (index < size() / 2) {
             // closer to head
             shiftItemsToLeft(transformedIndex)
+            // update head
+            --head
         } else {
             // closer to tail
             shiftItemsToRight(transformedIndex)
+            // update tail
+            ++tail
         }
         assert(data[injectionActualIndex] == null)
         data[injectionActualIndex] = item
@@ -175,9 +179,13 @@ class DynamicArray<T> : IList<T> {
         if (index < size() / 2) {
             // closer to head
             shiftItemsToRight(startFrom = head, stopAt = transformedIndex)
+            // update head
+            ++head
         } else {
             // closer to tail
             shiftItemsToLeft(startFrom = tail, stopAt = transformedIndex)
+            // update tail
+            --tail
         }
         return item
     }
