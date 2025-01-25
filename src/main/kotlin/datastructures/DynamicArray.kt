@@ -52,38 +52,46 @@ class DynamicArray<T> : IList<T> {
 
     override fun getTail(): T = get(size() - 1)
 
+    /**
+     * Pushing an item at index, will put it at index i, so that we can access it using the index i.
+     * @param index is in [0, #items]. if index == #items, it will be added as the new tail
+     * TODO: Index bound checking
+     */
     override fun pushAt(index: Int, item: T) {
-        TODO("Needs some decisions: 1. what happens when #items == 1, do we push to front or back?")
-//        if (getActualIndex(index) == getHeadIndexInBuffer()) {
-//            pushFront(item)
-//            return
-//        } else if (getActualIndex(index) == getTailIndexInBuffer()) {
-//            pushBack(item)
-//            return
-//        }
-//
-//        checkBounds(index - 1) // minus one since we are writing
-//        if (isBufferFull()) {
-//            extendBufferAndCopyData()
-//        }
-//        // where to put data in the array
-//        val injectionActualIndex = getActualIndex(index)
-//        // index in [head, tail] index space
-//        val transformedIndex = index + head
-//        if (index < size() / 2) {
-//            // closer to head
-//            shiftItemsToLeft(transformedIndex)
-//            // update head
-//            --head
-//        } else {
-//            // closer to tail
-//            shiftItemsToRight(transformedIndex)
-//            // update tail
-//            ++tail
-//        }
-//        assert(data[injectionActualIndex] == null)
-//        data[injectionActualIndex] = item
-//        ++numberOfItems
+        // data[0] = item -> item is new head
+        if ( index == 0 )
+        {
+            pushFront(item)
+            return
+        }
+        // data[#items] = item -> item is new tail
+        else if (index == getNumberOfItems())
+        {
+            pushBack(item)
+            return
+        }
+        // else, item is in between tail and head
+        if (isBufferFull()) {
+            extendBufferAndCopyData()
+        }
+        // where to put data in the array
+        val injectionActualIndex = getActualIndex(index)
+        // index in [head, tail] index space
+        val transformedIndex = index + head
+        if (index < size() / 2) {
+            // closer to head
+            shiftItemsToLeft(transformedIndex)
+            // update head
+            --head
+        } else {
+            // closer to tail
+            shiftItemsToRight(transformedIndex)
+            // update tail
+            ++tail
+        }
+        assert(data[injectionActualIndex] == null)
+        data[injectionActualIndex] = item
+        ++numberOfItems
     }
 
     override operator fun set(index: Int, value: T) {
@@ -111,7 +119,7 @@ class DynamicArray<T> : IList<T> {
     }
 
     private fun checkBounds(index: Int) {
-        if (index >= getNumberOfItems()) {
+        if (index < 0 || index >= getNumberOfItems()) {
             throw IndexOutOfBoundsException("Index $index is out of bounds")
         }
     }
@@ -253,6 +261,17 @@ class DynamicArray<T> : IList<T> {
     }
 
     /**
+     * Clears the buffer
+     */
+    fun clear() {
+        data = Array(initialBufferSize) { null }
+        numberOfItems = 0
+        head = 0
+        tail = 0
+        bufferSize = initialBufferSize
+    }
+
+    /**
      * Complexity Lg(n)
      */
     private fun findClosestPowerOfTwoGreaterOrEqualTo(number: Int): Int {
@@ -273,7 +292,7 @@ class DynamicArray<T> : IList<T> {
         checkBounds(startFrom)
         val actualStartingIndex = getActualIndex(startFrom)
         var shiftingItem = data[actualStartingIndex] as T
-        for (i in startFrom + 1..stopAt) {
+        for (i in startFrom + 1..stopAt + 1) {
             val actualIndex = getActualIndex(i)
             val temp = data[actualIndex] as T
             data[actualIndex] = shiftingItem
@@ -285,14 +304,14 @@ class DynamicArray<T> : IList<T> {
     /**
      * Shift items one position towards stopAt, starting at startFrom and stopping at stopAt
      * @param startFrom Note that startFrom will also be shifted one position to the left,
-     * and it is in [head, tail]
+     * and it is in the range [head, tail]
      * Note that startFrom must be >= stopAt
      */
     private fun shiftItemsToLeft(startFrom: Int, stopAt: Int = head) {
         checkBounds(startFrom)
         val actualStartingIndex = getActualIndex(startFrom)
         var shiftingItem = data[actualStartingIndex] as T
-        for (i in startFrom - 1 downTo stopAt) {
+        for (i in startFrom - 1 downTo stopAt - 1) {
             val actualIndex = getActualIndex(i)
             val temp = data[actualIndex] as T
             data[actualIndex] = shiftingItem
