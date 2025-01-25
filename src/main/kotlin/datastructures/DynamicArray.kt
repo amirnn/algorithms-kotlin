@@ -15,6 +15,7 @@ class DynamicArray<T> : IList<T> {
     private val initialBufferSize = 2
     private var data = Array<Any?>(initialBufferSize) { null }
     private var bufferSize: Int = initialBufferSize // size of buffer
+    private var numberOfItems = 0
     private var head: Int = 0 // decreases towards negative numbers and wraps around the array
     private var tail: Int = 0 // increases towards positive numbers
     private val bufferExtensionsScale = 2 // the buffer will increase in size by this scale
@@ -36,14 +37,7 @@ class DynamicArray<T> : IList<T> {
      */
     fun bufferSize() = bufferSize
 
-    override fun isEmpty(): Boolean {
-        val headIndex = getHeadIndexInBuffer()
-        val tailIndex = getTailIndexInBuffer()
-        val headIsEmpty = data[headIndex] == null
-        val tailIsEmpty = data[tailIndex] == null
-        val headAndTailAreSame = headIndex == tailIndex
-        return headAndTailAreSame && tailIsEmpty && headIsEmpty
-    }
+    override fun isEmpty(): Boolean = numberOfItems == 0
 
     /**
      * Get item at @param index. In case index is greater or equal to #elements inside the container, it
@@ -59,27 +53,37 @@ class DynamicArray<T> : IList<T> {
     override fun getTail(): T = get(size() - 1)
 
     override fun pushAt(index: Int, item: T) {
-        checkBounds(index)
-        if (isBufferFull()) {
-            extendBufferAndCopyData()
-        }
-        // where to put data in the array
-        val injectionActualIndex = getActualIndex(index)
-        // index in [head, tail] index space
-        val transformedIndex = index + head
-        if (index < size() / 2) {
-            // closer to head
-            shiftItemsToLeft(transformedIndex)
-            // update head
-            --head
-        } else {
-            // closer to tail
-            shiftItemsToRight(transformedIndex)
-            // update tail
-            ++tail
-        }
-        assert(data[injectionActualIndex] == null)
-        data[injectionActualIndex] = item
+        TODO("Needs some decisions: 1. what happens when #items == 1, do we push to front or back?")
+//        if (getActualIndex(index) == getHeadIndexInBuffer()) {
+//            pushFront(item)
+//            return
+//        } else if (getActualIndex(index) == getTailIndexInBuffer()) {
+//            pushBack(item)
+//            return
+//        }
+//
+//        checkBounds(index - 1) // minus one since we are writing
+//        if (isBufferFull()) {
+//            extendBufferAndCopyData()
+//        }
+//        // where to put data in the array
+//        val injectionActualIndex = getActualIndex(index)
+//        // index in [head, tail] index space
+//        val transformedIndex = index + head
+//        if (index < size() / 2) {
+//            // closer to head
+//            shiftItemsToLeft(transformedIndex)
+//            // update head
+//            --head
+//        } else {
+//            // closer to tail
+//            shiftItemsToRight(transformedIndex)
+//            // update tail
+//            ++tail
+//        }
+//        assert(data[injectionActualIndex] == null)
+//        data[injectionActualIndex] = item
+//        ++numberOfItems
     }
 
     override operator fun set(index: Int, value: T) {
@@ -90,13 +94,7 @@ class DynamicArray<T> : IList<T> {
     /**
      * Get number of items inside the array
      */
-    private fun getNumberOfItems(): Int {
-        return if (isEmpty()) {
-            0
-        } else {
-            (tail - head + 1)
-        }
-    }
+    private fun getNumberOfItems(): Int = numberOfItems
 
     private fun getTailIndexInBuffer(): Int = getActualIndex(tail)
 
@@ -108,7 +106,7 @@ class DynamicArray<T> : IList<T> {
      * @return actual value index, can be used in data[index]
      */
     private fun getActualIndex(index: Int): Int {
-        checkBounds(index)
+        // checkBounds(index) // causes error at the time of writing since we need to access --head and ++tail
         return (index + head + bufferSize) % bufferSize
     }
 
@@ -131,24 +129,26 @@ class DynamicArray<T> : IList<T> {
         if (isBufferFull()) extendBufferAndCopyData()
         if (isEmpty()) {
             data[head] = item
-            return
+        } else {
+            // decrease head
+            --head
+            val headIndex = getHeadIndexInBuffer()
+            data[headIndex] = item
         }
-        // decrease head
-        --head
-        val headIndex = getHeadIndexInBuffer()
-        data[headIndex] = item
+        ++numberOfItems
     }
 
     override fun pushBack(item: T) {
         if (isBufferFull()) extendBufferAndCopyData()
         if (isEmpty()) {
             data[tail] = item
-            return
+        } else {
+            // increase tail
+            tail++
+            val tailIndex = getTailIndexInBuffer()
+            data[tailIndex] = item
         }
-        // increase tail
-        tail++
-        val tailIndex = getTailIndexInBuffer()
-        data[tailIndex] = item
+        ++numberOfItems
     }
 
     override fun popFront(): T {
@@ -157,7 +157,8 @@ class DynamicArray<T> : IList<T> {
         val headIndex = getHeadIndexInBuffer()
         val item = data[headIndex]
         data[headIndex] = null
-        if (!isEmpty()) ++head
+        if (getNumberOfItems() > 1) ++head
+        --numberOfItems
         return item as T
     }
 
@@ -167,7 +168,8 @@ class DynamicArray<T> : IList<T> {
         val tailIndex = getTailIndexInBuffer()
         val item = data[tailIndex]
         data[tailIndex] = null
-        if (!isEmpty()) --tail
+        if (getNumberOfItems() > 1) --tail
+        --numberOfItems
         return item as T
     }
 
@@ -187,6 +189,7 @@ class DynamicArray<T> : IList<T> {
             // update tail
             --tail
         }
+        --numberOfItems
         return item
     }
 

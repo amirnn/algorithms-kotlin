@@ -50,4 +50,10 @@ fun main() {
     }
     println("Is da empty? ${da.isEmpty()}")
 
+//    for (i in 0..<127)
+//    {
+//        da.pushAt(i, i)
+//        println("item ${i} is: ${da[i]} and buffer size is ${da.bufferSize()} and element count is ${da.size()}")
+//    }
+
 }
