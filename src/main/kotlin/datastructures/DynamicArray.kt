@@ -11,7 +11,7 @@ package datastructures
  * da.popFront() = theta(1), asymptotic
  * da.popBack() = theta(1), asymptotic
  */
-class DynamicArray<T> : IList<T> {
+class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
     private val initialBufferSize = 2
     private var data = Array<Any?>(initialBufferSize) { null }
     private var bufferSize: Int = initialBufferSize // size of buffer
@@ -59,14 +59,12 @@ class DynamicArray<T> : IList<T> {
      */
     override fun pushAt(index: Int, item: T) {
         // data[0] = item -> item is new head
-        if ( index == 0 )
-        {
+        if (index == 0) {
             pushFront(item)
             return
         }
         // data[#items] = item -> item is new tail
-        else if (index == getNumberOfItems())
-        {
+        else if (index == getNumberOfItems()) {
             pushBack(item)
             return
         }
@@ -218,7 +216,6 @@ class DynamicArray<T> : IList<T> {
         // update the size
         bufferSize *= 2
     }
-
 
     /**
      * will shrink the buffer to its @param bufferShrinkScale size and will reset head and tail

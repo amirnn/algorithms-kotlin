@@ -1,6 +1,8 @@
 package datastructures
 
-interface IList<T>: Iterable<T> {
+import algorithms.ISort
+
+interface IList<T: Comparable<T>>: Iterable<T> {
     // getters
     fun size(): Int
     fun isEmpty(): Boolean

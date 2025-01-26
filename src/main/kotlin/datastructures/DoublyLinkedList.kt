@@ -12,7 +12,7 @@ package datastructures
  *
  * Note that I can improve the get operator to tetha lg(n)
  */
-class DoublyLinkedList<T> : IList<T> {
+class DoublyLinkedList<T: Comparable<T>> : ASortableList<T>() {
 
     data class Node<T>(var value: T, var next: Node<T>? = null, var previous: Node<T>? = null)
 
