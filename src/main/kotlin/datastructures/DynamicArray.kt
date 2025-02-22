@@ -214,7 +214,7 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
         head = 0
         tail = numberOfItems - 1
         // update the size
-        bufferSize *= 2
+        bufferSize *= bufferExtensionsScale
     }
 
     /**
@@ -243,6 +243,7 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * @param reserveSize
      */
     fun reserve(reserveSize: Int) {
+        if (reserveSize == bufferSize) { return }
         if (reserveSize < 2) throw UnsupportedOperationException("Size of $reserveSize is negative")
         if (reserveSize <= this.size()) throw UnsupportedOperationException("Buffer size must be greater than the current size")
         val powerOfTwo = findClosestPowerOfTwoGreaterOrEqualTo(reserveSize)
