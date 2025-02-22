@@ -71,11 +71,20 @@ class DoublyLinkedList<T: Comparable<T>> : ASortableList<T>() {
 
     private fun getNthNode(index: Int): Node<T> {
         checkSizeAndBounds(index)
-        var node = head
-        for (i in 1 until index) {
-            node = node!!.next
-        }
-        return node!!
+        if (index <= size() / 2)
+        {
+            var node = head
+            for (i in 1 until index) {
+                node = node!!.next
+            }
+            return node!!
+        } else {
+            var node = tail
+            for (i in size - 1 downTo index + 1) {
+                node = node!!.previous
+            }
+            return node!!
+        } 
     }
 
     private fun checkSizeAndBounds(index: Int) {
@@ -99,6 +108,10 @@ class DoublyLinkedList<T: Comparable<T>> : ASortableList<T>() {
     }
 
     override fun pushAt(index: Int, item: T) {
+        if ( isEmpty() && index != 0) {
+            pushFront(item)
+            return
+        }
         checkSizeAndBounds(index)
         when (index) {
             0 -> {
@@ -170,6 +183,9 @@ class DoublyLinkedList<T: Comparable<T>> : ASortableList<T>() {
     }
 
     override fun popAt(index: Int): T {
+        if ( size() == 1 && index == 0) {
+            return popFront()
+        }
         checkSizeAndBounds(index)
         val item: T
         when (index) {
