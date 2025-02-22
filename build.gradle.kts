@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
 }
 
-group = "org.algorithms"
+group = "com.blue"
 version = "1.0-SNAPSHOT"
 
 repositories {
