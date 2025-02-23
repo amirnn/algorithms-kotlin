@@ -89,7 +89,7 @@ class DoublyLinkedList<T: Comparable<T>> : ASortableList<T>() {
 
     private fun checkSizeAndBounds(index: Int) {
         if (isEmpty()) throw NoSuchElementException()
-        if (index > size - 1) throw IndexOutOfBoundsException()
+        if (index < 0 || index > size - 1) throw IndexOutOfBoundsException()
     }
 
 

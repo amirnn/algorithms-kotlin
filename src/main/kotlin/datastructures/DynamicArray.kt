@@ -2,6 +2,9 @@
 
 package datastructures
 
+import java.util.*
+import kotlin.NoSuchElementException
+
 /**
  * Dynamic Array that is implemented using a circular buffer.
  * Complexity:
@@ -30,7 +33,7 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
     /**
      * Returns number of elements currently inside the buffer
      */
-    override fun size() = getNumberOfItems()
+    override fun size(): Int = numberOfItems
 
     /**
      * Get buffer size
@@ -44,7 +47,7 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * @throws IndexOutOfBoundsException .
      */
     override operator fun get(index: Int): T {
-        checkBounds(index)
+        checkSizeAndBounds(index)
         return data[getActualIndex(index)] as T
     }
 
@@ -57,52 +60,33 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * @param index is in [0, #items]. if index == #items, it will be added as the new tail
      * TODO: Index bound checking
      */
+    @Throws(IndexOutOfBoundsException::class)
     override fun pushAt(index: Int, item: T) {
-        // data[0] = item -> item is new head
-        if (index == 0) {
-            pushFront(item)
-            return
-        }
-        // data[#items] = item -> item is new tail
-        else if (index == getNumberOfItems()) {
-            pushBack(item)
-            return
-        }
-        // else, item is in between tail and head
-        if (isBufferFull()) {
-            extendBufferAndCopyData()
-        }
-        // where to put data in the array
-        val injectionActualIndex = getActualIndex(index)
-        // index in [head, tail] index space
-        val transformedIndex = index + head
+        checkSizeAndBounds(index)
+        if (isBufferFull()) extendBufferAndCopyData()
         if (index < size() / 2) {
-            // closer to head
-            shiftItemsToLeft(transformedIndex)
-            // update head
-            --head
+            pushFront(item)
+            for (i in 0 until index) exchange(i, i + 1)
         } else {
-            // closer to tail
-            shiftItemsToRight(transformedIndex)
-            // update tail
-            ++tail
+            pushBack(item);
+            for (i in size() - 1 downTo index) exchange(i, i - 1)
         }
-        assert(data[injectionActualIndex] == null)
-        data[injectionActualIndex] = item
-        ++numberOfItems
+    }
+
+    private fun exchange(i: Int, j: Int) {
+        val ai = getActualIndex(i)
+        val aj = getActualIndex(j)
+        val temp = data[ai]
+        data[ai] = data[aj]
+        data[aj] = temp
     }
 
     override operator fun set(index: Int, value: T) {
-        checkBounds(index)
+        checkSizeAndBounds(index)
         data[getActualIndex(index)] = value
     }
 
-    /**
-     * Get number of items inside the array
-     */
-    private fun getNumberOfItems(): Int = numberOfItems
-
-    private fun getTailIndexInBuffer(): Int = getActualIndex(tail)
+    private fun getTailIndexInBuffer(): Int = getActualIndex(size() - 1)
 
     private fun getHeadIndexInBuffer(): Int = getActualIndex(0)
 
@@ -112,22 +96,25 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * @return actual value index, can be used in data[index]
      */
     private fun getActualIndex(index: Int): Int {
-        // checkBounds(index) // causes error at the time of writing since we need to access --head and ++tail
-        return (index + head + bufferSize) % bufferSize
+        val indexMod = index % bufferSize
+        val headMod = head % bufferSize
+        val secondMod = (headMod + bufferSize) % bufferSize
+        val actualIndex = (indexMod + secondMod) % bufferSize
+        return actualIndex
     }
 
-    private fun checkBounds(index: Int) {
-        if (index < 0 || index >= getNumberOfItems()) {
+    private fun checkSizeAndBounds(index: Int) {
+        if (index < 0 || index >= size()) {
             throw IndexOutOfBoundsException("Index $index is out of bounds")
+        }
+        if (isEmpty()) {
+            throw NoSuchElementException("Array is empty")
         }
     }
 
-    private fun isBufferFull(): Boolean = getNumberOfItems() >= bufferSize // this is ((tail - head) + 1) % size
-    private fun isBufferCloseToGetFull(): Boolean =
-        getNumberOfItems() == bufferSize - 1 // this is ((tail - head) + 1) % size
+    private fun isBufferFull(): Boolean = size() >= bufferSize
 
-    private fun bufferNeedsShrinking(): Boolean = getNumberOfItems() <= (bufferSize / itemShrinkRatio)
-    private fun isBufferCloseToNeedShrinking(): Boolean = getNumberOfItems() <= (bufferSize / itemShrinkRatio) + 1
+    private fun isBufferAlmostEmpty(): Boolean = size() <= (bufferSize / itemShrinkRatio)
 
     // ------------------------------------------- Setters ------------------------------------------- //
 
@@ -159,43 +146,41 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
 
     override fun popFront(): T {
         if (isEmpty()) throw NoSuchElementException()
-        if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
+        if (isBufferAlmostEmpty()) shrinkBufferAndCopyData()
         val headIndex = getHeadIndexInBuffer()
         val item = data[headIndex]
         data[headIndex] = null
-        if (getNumberOfItems() > 1) ++head
+        if (size() > 1) ++head
         --numberOfItems
         return item as T
     }
 
     override fun popBack(): T {
         if (isEmpty()) throw NoSuchElementException()
-        if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
+        if (isBufferAlmostEmpty()) shrinkBufferAndCopyData()
         val tailIndex = getTailIndexInBuffer()
         val item = data[tailIndex]
         data[tailIndex] = null
-        if (getNumberOfItems() > 1) --tail
+        if (size() > 1) --tail
         --numberOfItems
         return item as T
     }
 
     override fun popAt(index: Int): T {
-        checkBounds(index)
-        if (bufferNeedsShrinking()) shrinkBufferAndCopyData()
-        val item = data[getActualIndex(index)] as T
-        val transformedIndex = index + head
+        checkSizeAndBounds(index)
+        if (isBufferAlmostEmpty()) shrinkBufferAndCopyData()
+        val item: T
         if (index < size() / 2) {
-            // closer to head
-            shiftItemsToRight(startFrom = head, stopAt = transformedIndex)
-            // update head
-            ++head
+            for (i in index downTo 0) {
+                exchange(i, i - 1)
+            }
+            item = popFront()
         } else {
-            // closer to tail
-            shiftItemsToLeft(startFrom = tail, stopAt = transformedIndex)
-            // update tail
-            --tail
+            for (i in index until size() - 1) {
+                exchange(i, i + 1)
+            }
+            item = popBack()
         }
-        --numberOfItems
         return item
     }
 
@@ -203,8 +188,9 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * will extend the buffer to its @param bufferExtensionsScale size and will reset head and tail
      */
     private fun extendBufferAndCopyData() {
-        val numberOfItems = getNumberOfItems()
-        val newData: Array<Any?> = Array(bufferExtensionsScale * bufferSize) { null }
+        val numberOfItems = size()
+        val extendedSize = bufferExtensionsScale * bufferSize
+        val newData: Array<Any?> = Array(extendedSize) { null }
         for (i in 0..<numberOfItems) {
             newData[i] = data[getActualIndex(i)]
         }
@@ -221,7 +207,7 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * will shrink the buffer to its @param bufferShrinkScale size and will reset head and tail
      */
     private fun shrinkBufferAndCopyData() {
-        val numberOfItems = getNumberOfItems()
+        val numberOfItems = size()
         val shrinkSize = bufferSize / bufferShrinkScale
         assert(numberOfItems <= shrinkSize / itemShrinkRatio)
         val newData: Array<Any?> = Array(shrinkSize) { null }
@@ -243,12 +229,14 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
      * @param reserveSize
      */
     fun reserve(reserveSize: Int) {
-        if (reserveSize == bufferSize) { return }
+        if (reserveSize == bufferSize) {
+            return
+        }
         if (reserveSize < 2) throw UnsupportedOperationException("Size of $reserveSize is negative")
         if (reserveSize <= this.size()) throw UnsupportedOperationException("Buffer size must be greater than the current size")
         val powerOfTwo = findClosestPowerOfTwoGreaterOrEqualTo(reserveSize)
         val newData: Array<Any?> = Array(powerOfTwo) { null }
-        val numberOfItems = getNumberOfItems()
+        val numberOfItems = size()
         for (i in 0..<numberOfItems) {
             newData[i] = data[getActualIndex(i)]
         }
@@ -280,56 +268,18 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
         return factor
     }
 
-    /**
-     * Shifts items one position towards stopAt and starting form:
-     * @param startFrom is in [head, tail] index space
-     * @param stopAt is in [head, tail] index space
-     * Note that startFrom must be <= stopAt
-     */
-    private fun shiftItemsToRight(startFrom: Int, stopAt: Int = tail) {
-        checkBounds(startFrom)
-        val actualStartingIndex = getActualIndex(startFrom)
-        var shiftingItem = data[actualStartingIndex] as T
-        for (i in startFrom + 1..stopAt + 1) {
-            val actualIndex = getActualIndex(i)
-            val temp = data[actualIndex] as T
-            data[actualIndex] = shiftingItem
-            shiftingItem = temp
-        }
-        data[actualStartingIndex] = null
-    }
-
-    /**
-     * Shift items one position towards stopAt, starting at startFrom and stopping at stopAt
-     * @param startFrom Note that startFrom will also be shifted one position to the left,
-     * and it is in the range [head, tail]
-     * Note that startFrom must be >= stopAt
-     */
-    private fun shiftItemsToLeft(startFrom: Int, stopAt: Int = head) {
-        checkBounds(startFrom)
-        val actualStartingIndex = getActualIndex(startFrom)
-        var shiftingItem = data[actualStartingIndex] as T
-        for (i in startFrom - 1 downTo stopAt - 1) {
-            val actualIndex = getActualIndex(i)
-            val temp = data[actualIndex] as T
-            data[actualIndex] = shiftingItem
-            shiftingItem = temp
-        }
-        data[actualStartingIndex] = null
-    }
-
     override fun iterator(): Iterator<T> {
         return object : Iterator<T> {
-            var current = head
+            var current = 0
             override fun hasNext(): Boolean {
-                return current < tail
+                return current < size() - 1
             }
 
             override fun next(): T {
                 if (!hasNext()) {
                     throw NoSuchElementException()
                 }
-                return data[++current] as T
+                return data[getActualIndex(++current)] as T
             }
         }
     }
