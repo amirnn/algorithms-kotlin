@@ -3,7 +3,6 @@
 package datastructures
 
 import java.util.*
-import kotlin.NoSuchElementException
 
 /**
  * Dynamic Array that is implemented using a circular buffer.
@@ -58,7 +57,6 @@ class DynamicArray<T : Comparable<T>> : ASortableList<T>() {
     /**
      * Pushing an item at index, will put it at index i, so that we can access it using the index i.
      * @param index is in [0, #items]. if index == #items, it will be added as the new tail
-     * TODO: Index bound checking
      */
     @Throws(IndexOutOfBoundsException::class)
     override fun pushAt(index: Int, item: T) {
